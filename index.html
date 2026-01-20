@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen-Z Gravity | Client Portal</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: white; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
+        .gradient-text { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .status-badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase; }
+    </style>
+</head>
+<body class="min-h-screen">
+
+    <div id="loader" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
+        <div class="text-center">
+            <h2 class="text-2xl font-black italic animate-pulse">GRAVITY<span class="text-indigo-500">.CO</span></h2>
+            <p class="text-xs text-slate-500 mt-2 tracking-widest uppercase">Syncing Profile...</p>
+        </div>
+    </div>
+
+    <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8">
+        
+        <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-lg" id="client-avatar">?</div>
+                <div>
+                    <h1 class="text-2xl font-extrabold" id="header-name">Welcome Back</h1>
+                    <p class="text-slate-400 text-sm" id="header-location"><i class="fa-solid fa-location-dot"></i> Loading location...</p>
+                </div>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="openModal('newProjectModal')" class="glass px-6 py-3 rounded-2xl text-sm font-bold border-indigo-500/30 text-indigo-400"><i class="fa-solid fa-plus"></i> New Project</button>
+                <button onclick="window.open('https://meet.google.com/new')" class="bg-indigo-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20"><i class="fa-solid fa-video"></i> Meet</button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Total Edits</p>
+                <h3 class="text-2xl font-black mt-1" id="stat-total">0</h3>
+            </div>
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Pending Pay</p>
+                <h3 class="text-2xl font-black mt-1 text-red-400" id="stat-pending">₹0</h3>
+            </div>
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Reward Points</p>
+                <h3 class="text-2xl font-black mt-1 text-amber-400">120</h3>
+            </div>
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-slate-500 text-[10px] font-bold uppercase">Level</p>
+                <h3 class="text-2xl font-black mt-1 text-indigo-400">PRO</h3>
+            </div>
+        </div>
+
+        <section class="mb-12">
+            <h2 class="text-xl font-black mb-6 flex items-center gap-2"><i class="fa-solid fa-play-circle text-indigo-500"></i> LATEST PREVIEW</h2>
+            <div class="glass p-6 md:p-10 rounded-[3rem] overflow-hidden shadow-2xl border-white/5">
+                <div class="aspect-video bg-black rounded-3xl mb-8 border border-white/5 overflow-hidden">
+                    <video id="main-player" controls class="w-full h-full"></video>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <h3 class="text-2xl font-bold" id="main-title">Project Title</h3>
+                        <p class="text-slate-400 text-sm mb-4" id="main-desc">Review the latest edit and drop feedback below.</p>
+                        <div id="payment-card" class="hidden bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-2xl text-center">
+                            <p class="text-xs uppercase font-black text-indigo-400 mb-4">Complete Payment to Unlock Final</p>
+                            <img id="qr-display" src="" class="w-40 mx-auto rounded-xl bg-white p-2 mb-4">
+                            <h4 class="text-2xl font-black" id="price-display">₹0</h4>
+                        </div>
+                        <a id="download-btn" href="#" target="_blank" class="hidden w-full bg-green-600 py-4 rounded-2xl font-black text-center text-lg shadow-xl shadow-green-600/20">🚀 DOWNLOAD 4K FINAL</a>
+                    </div>
+                    
+                    <div class="flex flex-col gap-4">
+                        <h4 class="text-xs font-bold text-slate-500 uppercase">Drop Timeline Feedback</h4>
+                        <textarea id="feedback-note" placeholder="At 0:45, please change the color grading..." class="bg-slate-900 border border-white/5 p-4 rounded-2xl h-32 outline-none focus:border-indigo-500"></textarea>
+                        <button onclick="sendFeedback()" class="bg-slate-800 py-4 rounded-2xl font-bold hover:bg-slate-700 transition">Post Revision Note</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-xl font-black mb-6">PROJECT HISTORY</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="history-grid">
+                </div>
+        </section>
+    </div>
+
+    <div id="newProjectModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[110] p-6">
+        <div class="glass p-8 rounded-[3rem] w-full max-w-xl">
+            <h2 class="text-2xl font-black mb-6 italic tracking-tighter">START NEW PROJECT</h2>
+            <div class="space-y-4">
+                <input type="text" id="np-title" placeholder="Project Name (e.g. Travel Vlog)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="np-raw" placeholder="Raw Footage Link (G-Drive)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5">
+                <textarea id="np-notes" placeholder="Video requirements & Style..." class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 h-24"></textarea>
+                <div class="flex gap-4">
+                    <button onclick="closeModal('newProjectModal')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold">Cancel</button>
+                    <button onclick="requestProject()" class="flex-1 bg-indigo-600 py-4 rounded-2xl font-bold">Submit Raw Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyClH2MyqJG0qkuOT5LokfxdYlLY8guW79Q",
+            authDomain: "videodelivery-1.firebaseapp.com",
+            databaseURL: "https://videodelivery-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "videodelivery-1",
+            storageBucket: "videodelivery-1.firebasestorage.app",
+            messagingSenderId: "172604228077",
+            appId: "1:172604228077:web:1275b0733029b19aefa7e4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        const clientId = new URLSearchParams(window.location.search).get('id');
+        let clientData = null;
+
+        if (clientId) {
+            db.ref('projects/' + clientId).on('value', snap => {
+                clientData = snap.val();
+                if (clientData) {
+                    renderUI(clientData);
+                    document.getElementById('loader').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                }
+            });
+        }
+
+        function renderUI(data) {
+            document.getElementById('header-name').innerText = `Hello, ${data.cn}`;
+            document.getElementById('client-avatar').innerText = data.cn.charAt(0);
+            document.getElementById('main-title').innerText = data.t;
+            document.getElementById('main-player').src = data.v;
+            document.getElementById('price-display').innerText = `₹${data.p}`;
+            document.getElementById('qr-display').src = data.q;
+            
+            // Tracking Seen
+            db.ref('projects/' + clientId).update({ seen: new Date().toLocaleTimeString() });
+
+            // Payment Logic
+            if (data.paid) {
+                document.getElementById('payment-card').classList.add('hidden');
+                document.getElementById('download-btn').classList.remove('hidden');
+                document.getElementById('download-btn').href = data.f;
+                document.getElementById('stat-pending').innerText = "₹0";
+                document.getElementById('stat-pending').classList.replace('text-red-400', 'text-green-400');
+            } else {
+                document.getElementById('payment-card').classList.remove('hidden');
+                document.getElementById('download-btn').classList.add('hidden');
+                document.getElementById('stat-pending').innerText = `₹${data.p}`;
+            }
+
+            // Stats
+            document.getElementById('stat-total').innerText = "1"; // Can be dynamic if you add a list
+            
+            // Render History (Simple logic for demonstration)
+            const history = document.getElementById('history-grid');
+            history.innerHTML = `
+                <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                    <div>
+                        <p class="font-bold">${data.t}</p>
+                        <p class="text-[10px] text-slate-500">${new Date().toLocaleDateString()}</p>
+                    </div>
+                    <span class="status-badge ${data.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}">
+                        ${data.paid ? 'Completed' : 'Processing'}
+                    </span>
+                </div>
+            `;
+        }
+
+        function sendFeedback() {
+            const note = document.getElementById('feedback-note').value;
+            const msg = `🔥 *Revision Request from ${clientData.cn}*\nProject: ${clientData.t}\nNote: ${note}`;
+            window.open(`https://wa.me/91YOURNUMBER?text=${encodeURIComponent(msg)}`);
+        }
+
+        function requestProject() {
+            const title = document.getElementById('np-title').value;
+            const link = document.getElementById('np-raw').value;
+            const msg = `🚀 *New Project Request*\nClient ID: ${clientId}\nTitle: ${title}\nRaw Video: ${link}`;
+            window.open(`https://wa.me/91YOURNUMBER?text=${encodeURIComponent(msg)}`);
+            closeModal('newProjectModal');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+        
+        // Final Video Unlock Animation
+        let unlockPlayed = false;
+        db.ref('projects/' + clientId + '/paid').on('value', p => {
+            if(p.val() === true && !unlockPlayed) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7'] });
+                unlockPlayed = true;
+            }
+        });
+    </script>
+</body>
+</html>
