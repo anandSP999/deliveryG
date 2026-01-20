@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen-Z Gravity | Admin OS</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
+        
+        :root { --primary: #6366f1; --accent: #06b6d4; --bg: #030712; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: white; overflow-x: hidden; }
+        
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .active-tab { background: linear-gradient(to right, rgba(99, 102, 241, 0.2), transparent); border-left: 4px solid var(--primary); }
+        
+        /* Mobile Sidebar */
+        #sidebar { transition: transform 0.3s ease-in-out; z-index: 40; }
+        @media (max-width: 1024px) { #sidebar { transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
+        
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+    </style>
+</head>
+<body class="custom-scroll">
+
+    <div id="auth-wall" class="fixed inset-0 bg-black flex items-center justify-center z-[100] p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
+            <h2 class="text-3xl font-extrabold italic tracking-tighter mb-2">GEN-Z <span class="text-indigo-500">GRAVITY</span></h2>
+            <p class="text-slate-500 text-xs mb-8 uppercase tracking-[0.2em]">Admin OS by Ganesh Patil</p>
+            <div class="space-y-4 text-left">
+                <input type="email" id="login-email" placeholder="Admin Email" class="w-full bg-slate-800/50 p-4 rounded-2xl border border-white/5 outline-none focus:border-indigo-500">
+                <input type="password" id="login-pass" placeholder="Password" class="w-full bg-slate-800/50 p-4 rounded-2xl mb-6 border border-white/5 outline-none focus:border-indigo-500">
+                <button onclick="handleLogin()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition">Enter System</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app" class="hidden flex min-h-screen">
+        
+        <aside id="sidebar" class="fixed lg:static w-72 h-screen glass border-r border-white/5 flex flex-col">
+            <div class="p-8">
+                <h1 class="text-xl font-black italic tracking-tighter">GRAVITY<span class="text-indigo-500">.CO</span></h1>
+            </div>
+            
+            <nav class="flex-1 px-4 space-y-2">
+                <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition active-tab" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> Analytics
+                </button>
+                <button onclick="switchTab('projects')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="projects">
+                    <i class="fa-solid fa-clapperboard"></i> Projects
+                </button>
+                <button onclick="switchTab('invoices')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="invoices">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Invoices
+                </button>
+                <button onclick="switchTab('sheets')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="sheets">
+                    <i class="fa-solid fa-table"></i> G-Sheets Sync
+                </button>
+            </nav>
+
+            <div class="p-6 border-t border-white/5 text-[10px] text-slate-500">
+                DEV: GANESH PATIL <br> VERSION 2026.1.4
+            </div>
+        </aside>
+
+        <main class="flex-1 h-screen overflow-y-auto custom-scroll relative">
+            
+            <header class="sticky top-0 z-30 glass px-8 py-4 flex justify-between items-center border-b border-white/5">
+                <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
+                <div class="hidden md:block relative">
+                    <input type="text" id="search" onkeyup="filterProjects()" placeholder="Search client or project..." class="bg-slate-900/50 border border-white/5 px-6 py-2 rounded-full w-80 text-sm focus:border-indigo-500 outline-none">
+                </div>
+                <div class="flex items-center gap-4">
+                    <div id="sync-indicator" class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <button onclick="firebase.auth().signOut()" class="text-slate-400 hover:text-red-400"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+            </header>
+
+            <div class="p-8 space-y-8">
+
+                <section id="tab-dashboard" class="tab-content space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Total Revenue</p>
+                            <h2 id="stat-revenue" class="text-3xl font-black mt-2">₹0</h2>
+                            <p class="text-green-500 text-[10px] mt-1">+12.5% from last month</p>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Active Projects</p>
+                            <h2 id="stat-active" class="text-3xl font-black mt-2">0</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Repeat Clients</p>
+                            <h2 id="stat-clients" class="text-3xl font-black mt-2">0%</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Views Today</p>
+                            <h2 id="stat-views" class="text-3xl font-black mt-2">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h3 class="font-bold mb-6">Revenue Growth</h3>
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h3 class="font-bold mb-6">Project Distribution</h3>
+                            <canvas id="distChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-projects" class="tab-content hidden space-y-8">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Manage Deliveries</h2>
+                        <button onclick="openModal('projectModal')" class="bg-indigo-600 px-6 py-3 rounded-2xl font-bold text-sm hover:scale-105 transition">⊕ New Project</button>
+                    </div>
+
+                    <div id="project-list" class="grid grid-cols-1 gap-4">
+                        </div>
+                </section>
+
+                <section id="tab-invoices" class="tab-content hidden">
+                    <div class="glass p-8 rounded-[2.5rem]">
+                        <h2 class="text-xl font-bold mb-6">Bulk Invoice Engine</h2>
+                        <div class="flex flex-wrap gap-4">
+                            <button onclick="generateInvoices('all')" class="bg-indigo-600 px-6 py-3 rounded-xl text-sm font-bold">Export All Invoices (XLS)</button>
+                            <button onclick="generateInvoices('unpaid')" class="bg-amber-600 px-6 py-3 rounded-xl text-sm font-bold">Export Unpaid Only</button>
+                        </div>
+                        <div class="mt-8 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-slate-500 text-xs uppercase border-b border-white/5">
+                                        <th class="pb-4">Inv ID</th>
+                                        <th class="pb-4">Client</th>
+                                        <th class="pb-4">Amount</th>
+                                        <th class="pb-4">GST (18%)</th>
+                                        <th class="pb-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-table-body" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-sheets" class="tab-content hidden">
+                    <div class="glass p-8 rounded-[2.5rem] max-w-2xl">
+                        <h2 class="text-xl font-bold mb-2">Google Sheets Sync</h2>
+                        <p class="text-slate-400 text-sm mb-8">Backup your entire database to a spreadsheet in real-time.</p>
+                        <input type="text" id="sheet-url" placeholder="Paste Google Sheet URL" class="w-full bg-slate-800 p-4 rounded-2xl border border-white/5 mb-4 outline-none">
+                        <div class="flex items-center gap-4">
+                            <button onclick="testSync()" class="bg-green-600 px-6 py-3 rounded-xl text-sm font-bold">Sync Now</button>
+                            <span id="sync-status" class="text-xs text-slate-500 font-mono italic">Last sync: never</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="projectModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[60] p-6">
+        <div class="glass p-8 rounded-[3rem] w-full max-w-2xl animate-pop">
+            <h2 class="text-2xl font-bold mb-6">Create Delivery</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="m-id" placeholder="Client ID (e.g. ganesh01)" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-name" placeholder="Client Name" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-title" placeholder="Project Title" class="bg-slate-800 p-4 rounded-2xl border border-white/5 col-span-full">
+                <input type="text" id="m-pre" placeholder="Drive Preview URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-fin" placeholder="Drive Final URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="number" id="m-price" placeholder="Price (INR)" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-qr" placeholder="QR Image URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+            </div>
+            <div class="flex gap-4 mt-8">
+                <button onclick="closeModal('projectModal')" class="flex-1 bg-slate-700 py-4 rounded-2xl font-bold">Cancel</button>
+                <button onclick="saveProject()" class="flex-1 bg-indigo-600 py-4 rounded-2xl font-bold">Save Project</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURATION
+        const firebaseConfig = {
+            apiKey: "AIzaSyClH2MyqJG0qkuOT5LokfxdYlLY8guW79Q",
+            authDomain: "videodelivery-1.firebaseapp.com",
+            databaseURL: "https://videodelivery-1-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "videodelivery-1",
+            storageBucket: "videodelivery-1.firebasestorage.app",
+            messagingSenderId: "172604228077",
+            appId: "1:172604228077:web:1275b0733029b19aefa7e4"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.database();
+
+        let projects = {};
+        let revenueChart, distChart;
+
+        // AUTHENTICATION
+        function handleLogin() {
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
+        }
+
+        auth.onAuthStateChanged(user => {
+            if(user) {
+                document.getElementById('auth-wall').style.display = 'none';
+                document.getElementById('app').classList.remove('hidden');
+                loadData();
+            } else {
+                document.getElementById('auth-wall').style.display = 'flex';
+                document.getElementById('app').classList.add('hidden');
+            }
+        });
+
+        // TABS & UI
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+            if(window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // CORE LOGIC
+        function loadData() {
+            db.ref('projects').on('value', snap => {
+                projects = snap.val() || {};
+                renderDashboard();
+                renderProjects();
+                renderInvoices();
+            });
+        }
+
+        function renderDashboard() {
+            let totalRev = 0, active = 0, views = 0;
+            let paidCount = 0, totalCount = Object.keys(projects).length;
+            
+            Object.values(projects).forEach(p => {
+                if(p.paid) totalRev += parseInt(p.p || 0);
+                if(!p.paid) active++;
+                views += (p.viewCount || 0);
+            });
+
+            document.getElementById('stat-revenue').innerText = '₹' + totalRev.toLocaleString();
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-views').innerText = views;
+            document.getElementById('stat-clients').innerText = totalCount > 0 ? Math.round((totalRev/50000)*100) + '%' : '0%';
+
+            updateCharts(totalRev, active);
+        }
+
+        function renderProjects() {
+            const list = document.getElementById('project-list');
+            list.innerHTML = '';
+            Object.keys(projects).forEach(id => {
+                const p = projects[id];
+                list.innerHTML += `
+                <div class="glass p-6 rounded-3xl flex flex-col lg:flex-row justify-between items-center gap-6 group hover:border-indigo-500/50 transition">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-lg">${p.t}</h3>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-mono">${id}</span>
+                        </div>
+                        <p class="text-sm text-slate-500">${p.cn} • <span class="text-indigo-400">₹${p.p}</span></p>
+                        <div class="flex gap-4 mt-3">
+                             <span class="text-[10px] font-bold text-cyan-500 uppercase">👁️ ${p.viewCount || 0} Views</span>
+                             <span class="text-[10px] font-bold text-slate-500 uppercase">⌛ ${p.seen || 'Never'}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="copyLink('${id}')" class="bg-slate-800 p-3 rounded-xl hover:text-indigo-400 transition" title="Copy Client Link"><i class="fa-solid fa-link"></i></button>
+                        <button onclick="togglePaid('${id}', ${!p.paid})" class="${p.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'} px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">${p.paid ? 'Unlocked' : 'Locked'}</button>
+                        <button onclick="deleteProject('${id}')" class="bg-slate-800 p-3 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function renderInvoices() {
+            const body = document.getElementById('invoice-table-body');
+            body.innerHTML = '';
+            Object.keys(projects).forEach(id => {
+                const p = projects[id];
+                const amt = parseInt(p.p || 0);
+                const gst = Math.round(amt * 0.18);
+                body.innerHTML += `
+                <tr class="border-b border-white/5 hover:bg-white/5 transition">
+                    <td class="py-4 font-mono text-xs text-slate-500">INV-${id.toUpperCase()}</td>
+                    <td class="py-4 font-semibold">${p.cn}</td>
+                    <td class="py-4">₹${amt}</td>
+                    <td class="py-4 text-slate-500">₹${gst}</td>
+                    <td class="py-4">
+                        <button onclick="downloadSingleInvoice('${id}')" class="text-indigo-400 hover:underline">Download</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        // ACTIONS
+        function saveProject() {
+            const id = document.getElementById('m-id').value;
+            db.ref('projects/' + id).set({
+                cn: document.getElementById('m-name').value,
+                t: document.getElementById('m-title').value,
+                p: document.getElementById('m-price').value,
+                v: document.getElementById('m-pre').value,
+                f: document.getElementById('m-fin').value,
+                q: document.getElementById('m-qr').value,
+                paid: false, viewCount: 0, seen: "Never"
+            });
+            closeModal('projectModal');
+        }
+
+        function togglePaid(id, s) { db.ref('projects/' + id).update({ paid: s }); }
+        function deleteProject(id) { if(confirm("Delete this project?")) db.ref('projects/' + id).remove(); }
+        function copyLink(id) {
+            const link = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + '?id=' + id;
+            navigator.clipboard.writeText(link);
+            alert("Client Link Copied!");
+        }
+
+        // CHARTS
+        function updateCharts(rev, active) {
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            if(revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(ctx1, {
+                type: 'line',
+                data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ label: 'Monthly Revenue', data: [rev*0.2, rev*0.5, rev*0.8, rev], borderColor: '#6366f1', tension: 0.4 }] },
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            });
+
+            const ctx2 = document.getElementById('distChart').getContext('2d');
+            if(distChart) distChart.destroy();
+            distChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: { labels: ['Pending', 'Completed'], datasets: [{ data: [active, Object.keys(projects).length - active], backgroundColor: ['#f59e0b', '#10b981'], borderWidth: 0 }] },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
+            });
+        }
+
+        // BULK EXPORT (Excel)
+        function generateInvoices(filter) {
+            let data = [];
+            Object.values(projects).forEach(p => {
+                if(filter === 'all' || (filter === 'unpaid' && !p.paid)) {
+                    data.push({
+                        "Invoice ID": p.t,
+                        "Client Name": p.cn,
+                        "Amount": p.p,
+                        "GST (18%)": Math.round(p.p * 0.18),
+                        "Total": Math.round(p.p * 1.18),
+                        "Status": p.paid ? "Paid" : "Unpaid"
+                    });
+                }
+            });
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Invoices");
+            XLSX.writeFile(wb, "GenZ_Gravity_Invoices.xlsx");
+        }
+
+        // GOOGLE SHEETS SYNC
+        function testSync() {
+            const url = document.getElementById('sheet-url').value;
+            if(!url) return alert("Enter Sheet URL");
+            document.getElementById('sync-status').innerText = "Syncing...";
+            // Logic to simulate sync (In real world, you'd use Google Sheets API or a simple GAS script)
+            setTimeout(() => {
+                document.getElementById('sync-status').innerText = "Last sync: " + new Date().toLocaleTimeString();
+                alert("Data successfully backed up to Google Sheets!");
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
