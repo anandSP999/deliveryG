@@ -18,9 +18,55 @@
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
         .gradient-text { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .status-badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase; }
+        
+        /* Invoice Styling (Hidden on Screen) */
+        #invoice-template { color: #000; padding: 40px; background: #fff; width: 800px; position: absolute; left: -9999px; }
     </style>
 </head>
 <body class="min-h-screen">
+
+    <div id="invoice-template">
+        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
+            <div>
+                <h1 style="font-size: 24px; font-weight: 800; color: #6366f1; margin: 0;">GEN-Z GRAVITY.CO</h1>
+                <p style="font-size: 12px; color: #666; margin: 5px 0;">Premium Video Editing Services</p>
+            </div>
+            <div style="text-align: right;">
+                <h2 style="font-size: 18px; margin: 0;">INVOICE</h2>
+                <p id="inv-date" style="font-size: 12px; color: #666;"></p>
+            </div>
+        </div>
+        <div style="margin-bottom: 30px;">
+            <p style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 5px;">Bill To:</p>
+            <h3 id="inv-client-name" style="font-size: 16px; margin: 0;">Client Name</h3>
+            <p id="inv-client-id" style="font-size: 12px; color: #666;"></p>
+        </div>
+        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+            <thead>
+                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                    <th style="text-align: left; padding: 12px; font-size: 12px;">Description</th>
+                    <th style="text-align: right; padding: 12px; font-size: 12px;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                        <span id="inv-project-title" style="font-weight: 600; font-size: 14px;">Project Title</span><br>
+                        <span style="font-size: 11px; color: #666;">Professional Video Editing & Color Grading</span>
+                    </td>
+                    <td id="inv-price" style="text-align: right; padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">₹0</td>
+                </tr>
+            </tbody>
+        </table>
+        <div style="text-align: right; margin-top: 20px;">
+            <p style="font-size: 14px; margin-bottom: 5px;">Subtotal: <span id="inv-subtotal" style="font-weight: 600;">₹0</span></p>
+            <p style="font-size: 14px; margin-bottom: 5px;">Tax (GST 0%): ₹0</p>
+            <h2 style="font-size: 20px; color: #6366f1; margin-top: 10px;">Total: <span id="inv-total">₹0</span></h2>
+        </div>
+        <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; font-size: 10px; color: #999; text-align: center;">
+            Thank you for choosing Gen-Z Gravity! This is a computer-generated invoice.
+        </div>
+    </div>
 
     <div id="loader" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
         <div class="text-center">
@@ -36,7 +82,7 @@
                 <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-lg" id="client-avatar">?</div>
                 <div>
                     <h1 class="text-2xl font-extrabold" id="header-name">Welcome Back</h1>
-                    <p class="text-slate-400 text-sm" id="header-location"><i class="fa-solid fa-location-dot"></i> Loading location...</p>
+                    <p class="text-slate-400 text-sm" id="header-location"><i class="fa-solid fa-location-dot"></i> Your Editing Studio</p>
                 </div>
             </div>
             <div class="flex gap-3">
@@ -48,7 +94,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
             <div class="glass p-6 rounded-3xl text-center">
                 <p class="text-slate-500 text-[10px] font-bold uppercase">Total Edits</p>
-                <h3 class="text-2xl font-black mt-1" id="stat-total">0</h3>
+                <h3 class="text-2xl font-black mt-1" id="stat-total">1</h3>
             </div>
             <div class="glass p-6 rounded-3xl text-center">
                 <p class="text-slate-500 text-[10px] font-bold uppercase">Pending Pay</p>
@@ -75,17 +121,24 @@
                     <div>
                         <h3 class="text-2xl font-bold" id="main-title">Project Title</h3>
                         <p class="text-slate-400 text-sm mb-4" id="main-desc">Review the latest edit and drop feedback below.</p>
+                        
                         <div id="payment-card" class="hidden bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-2xl text-center">
                             <p class="text-xs uppercase font-black text-indigo-400 mb-4">Complete Payment to Unlock Final</p>
                             <img id="qr-display" src="" class="w-40 mx-auto rounded-xl bg-white p-2 mb-4">
                             <h4 class="text-2xl font-black" id="price-display">₹0</h4>
                         </div>
-                        <a id="download-btn" href="#" target="_blank" class="hidden w-full bg-green-600 py-4 rounded-2xl font-black text-center text-lg shadow-xl shadow-green-600/20">🚀 DOWNLOAD 4K FINAL</a>
+
+                        <div id="unlocked-actions" class="hidden space-y-3">
+                            <a id="download-btn" href="#" target="_blank" class="block w-full bg-green-600 py-4 rounded-2xl font-black text-center text-lg shadow-xl shadow-green-600/20">🚀 DOWNLOAD 4K FINAL</a>
+                            <button onclick="downloadInvoicePDF()" class="w-full bg-slate-800 border border-white/10 py-3 rounded-2xl font-bold text-sm hover:bg-slate-700 transition">
+                                <i class="fa-solid fa-file-pdf mr-2"></i> Download Invoice
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="flex flex-col gap-4">
                         <h4 class="text-xs font-bold text-slate-500 uppercase">Drop Timeline Feedback</h4>
-                        <textarea id="feedback-note" placeholder="At 0:45, please change the color grading..." class="bg-slate-900 border border-white/5 p-4 rounded-2xl h-32 outline-none focus:border-indigo-500"></textarea>
+                        <textarea id="feedback-note" placeholder="At 0:45, please change the color grading..." class="bg-slate-900 border border-white/5 p-4 rounded-2xl h-32 outline-none focus:border-indigo-500 text-white"></textarea>
                         <button onclick="sendFeedback()" class="bg-slate-800 py-4 rounded-2xl font-bold hover:bg-slate-700 transition">Post Revision Note</button>
                     </div>
                 </div>
@@ -94,18 +147,17 @@
 
         <section>
             <h2 class="text-xl font-black mb-6">PROJECT HISTORY</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="history-grid">
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="history-grid"></div>
         </section>
     </div>
 
     <div id="newProjectModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[110] p-6">
         <div class="glass p-8 rounded-[3rem] w-full max-w-xl">
-            <h2 class="text-2xl font-black mb-6 italic tracking-tighter">START NEW PROJECT</h2>
+            <h2 class="text-2xl font-black mb-6 italic tracking-tighter text-indigo-400">START NEW PROJECT</h2>
             <div class="space-y-4">
-                <input type="text" id="np-title" placeholder="Project Name (e.g. Travel Vlog)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5">
-                <input type="text" id="np-raw" placeholder="Raw Footage Link (G-Drive)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5">
-                <textarea id="np-notes" placeholder="Video requirements & Style..." class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 h-24"></textarea>
+                <input type="text" id="np-title" placeholder="Project Name (e.g. Travel Vlog)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 text-white">
+                <input type="text" id="np-raw" placeholder="Raw Footage Link (G-Drive)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 text-white">
+                <textarea id="np-notes" placeholder="Video requirements & Style..." class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 h-24 text-white"></textarea>
                 <div class="flex gap-4">
                     <button onclick="closeModal('newProjectModal')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold">Cancel</button>
                     <button onclick="requestProject()" class="flex-1 bg-indigo-600 py-4 rounded-2xl font-bold">Submit Raw Link</button>
@@ -150,57 +202,75 @@
             document.getElementById('qr-display').src = data.q;
             
             // Tracking Seen
-            db.ref('projects/' + clientId).update({ seen: new Date().toLocaleTimeString() });
+            db.ref('projects/' + clientId).update({ lastSeen: new Date().toLocaleTimeString() });
 
-            // Payment Logic
+            // Payment & Unlocked Logic
             if (data.paid) {
                 document.getElementById('payment-card').classList.add('hidden');
-                document.getElementById('download-btn').classList.remove('hidden');
+                document.getElementById('unlocked-actions').classList.remove('hidden');
                 document.getElementById('download-btn').href = data.f;
                 document.getElementById('stat-pending').innerText = "₹0";
-                document.getElementById('stat-pending').classList.replace('text-red-400', 'text-green-400');
+                document.getElementById('stat-pending').style.color = "#4ade80";
+                
+                // Set Invoice Data
+                document.getElementById('inv-client-name').innerText = data.cn;
+                document.getElementById('inv-client-id').innerText = "ID: " + clientId;
+                document.getElementById('inv-project-title').innerText = data.t;
+                document.getElementById('inv-price').innerText = `₹${data.p}`;
+                document.getElementById('inv-subtotal').innerText = `₹${data.p}`;
+                document.getElementById('inv-total').innerText = `₹${data.p}`;
+                document.getElementById('inv-date').innerText = "Date: " + new Date().toLocaleDateString();
             } else {
                 document.getElementById('payment-card').classList.remove('hidden');
-                document.getElementById('download-btn').classList.add('hidden');
+                document.getElementById('unlocked-actions').classList.add('hidden');
                 document.getElementById('stat-pending').innerText = `₹${data.p}`;
             }
 
-            // Stats
-            document.getElementById('stat-total').innerText = "1"; // Can be dynamic if you add a list
-            
-            // Render History (Simple logic for demonstration)
+            // Render History
             const history = document.getElementById('history-grid');
             history.innerHTML = `
-                <div class="glass p-4 rounded-2xl flex items-center justify-between">
+                <div class="glass p-5 rounded-3xl flex items-center justify-between border border-white/5">
                     <div>
-                        <p class="font-bold">${data.t}</p>
-                        <p class="text-[10px] text-slate-500">${new Date().toLocaleDateString()}</p>
+                        <p class="font-bold text-white">${data.t}</p>
+                        <p class="text-[10px] text-slate-500 uppercase tracking-widest">${new Date().toLocaleDateString()}</p>
                     </div>
-                    <span class="status-badge ${data.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'}">
-                        ${data.paid ? 'Completed' : 'Processing'}
+                    <span class="status-badge ${data.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-400'}">
+                        ${data.paid ? 'Completed' : 'Payment Pending'}
                     </span>
                 </div>
             `;
         }
 
+        function downloadInvoicePDF() {
+            const element = document.getElementById('invoice-template');
+            const options = {
+                margin: 0,
+                filename: `Invoice_${clientData.t}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+            html2pdf().set(options).from(element).save();
+        }
+
         function sendFeedback() {
             const note = document.getElementById('feedback-note').value;
             const msg = `🔥 *Revision Request from ${clientData.cn}*\nProject: ${clientData.t}\nNote: ${note}`;
-            window.open(`https://wa.me/91YOURNUMBER?text=${encodeURIComponent(msg)}`);
+            window.open(`https://wa.me/918866653002?text=${encodeURIComponent(msg)}`);
         }
 
         function requestProject() {
             const title = document.getElementById('np-title').value;
             const link = document.getElementById('np-raw').value;
             const msg = `🚀 *New Project Request*\nClient ID: ${clientId}\nTitle: ${title}\nRaw Video: ${link}`;
-            window.open(`https://wa.me/91YOURNUMBER?text=${encodeURIComponent(msg)}`);
+            window.open(`https://wa.me/918866653002?text=${encodeURIComponent(msg)}`);
             closeModal('newProjectModal');
         }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         
-        // Final Video Unlock Animation
+        // Celebrate Unlock
         let unlockPlayed = false;
         db.ref('projects/' + clientId + '/paid').on('value', p => {
             if(p.val() === true && !unlockPlayed) {
