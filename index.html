@@ -16,157 +16,130 @@
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: white; }
         .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.1); }
-        .gradient-text { background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .status-badge { font-size: 10px; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase; }
         
-        /* Invoice Styling (Hidden on Screen) */
-        #invoice-template { color: #000; padding: 40px; background: #fff; width: 800px; position: absolute; left: -9999px; }
+        /* Fixed Invoice Hiding Strategy */
+        #invoice-container { position: fixed; left: -9999px; top: 0; }
+        #invoice-template { width: 800px; background: white; color: black; padding: 40px; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <div id="invoice-template">
-        <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #6366f1; padding-bottom: 20px; margin-bottom: 20px;">
-            <div>
-                <h1 style="font-size: 24px; font-weight: 800; color: #6366f1; margin: 0;">GEN-Z GRAVITY.CO</h1>
-                <p style="font-size: 12px; color: #666; margin: 5px 0;">Premium Video Editing Services</p>
-            </div>
-            <div style="text-align: right;">
-                <h2 style="font-size: 18px; margin: 0;">INVOICE</h2>
-                <p id="inv-date" style="font-size: 12px; color: #666;"></p>
-            </div>
-        </div>
-        <div style="margin-bottom: 30px;">
-            <p style="font-size: 10px; text-transform: uppercase; color: #999; margin-bottom: 5px;">Bill To:</p>
-            <h3 id="inv-client-name" style="font-size: 16px; margin: 0;">Client Name</h3>
-            <p id="inv-client-id" style="font-size: 12px; color: #666;"></p>
-        </div>
-        <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
-            <thead>
-                <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
-                    <th style="text-align: left; padding: 12px; font-size: 12px;">Description</th>
-                    <th style="text-align: right; padding: 12px; font-size: 12px;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-                        <span id="inv-project-title" style="font-weight: 600; font-size: 14px;">Project Title</span><br>
-                        <span style="font-size: 11px; color: #666;">Professional Video Editing & Color Grading</span>
-                    </td>
-                    <td id="inv-price" style="text-align: right; padding: 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600;">₹0</td>
-                </tr>
-            </tbody>
-        </table>
-        <div style="text-align: right; margin-top: 20px;">
-            <p style="font-size: 14px; margin-bottom: 5px;">Subtotal: <span id="inv-subtotal" style="font-weight: 600;">₹0</span></p>
-            <p style="font-size: 14px; margin-bottom: 5px;">Tax (GST 0%): ₹0</p>
-            <h2 style="font-size: 20px; color: #6366f1; margin-top: 10px;">Total: <span id="inv-total">₹0</span></h2>
-        </div>
-        <div style="margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; font-size: 10px; color: #999; text-align: center;">
-            Thank you for choosing Gen-Z Gravity! This is a computer-generated invoice.
-        </div>
-    </div>
-
     <div id="loader" class="fixed inset-0 bg-slate-950 z-[100] flex items-center justify-center">
         <div class="text-center">
             <h2 class="text-2xl font-black italic animate-pulse">GRAVITY<span class="text-indigo-500">.CO</span></h2>
-            <p class="text-xs text-slate-500 mt-2 tracking-widest uppercase">Syncing Profile...</p>
+            <p class="text-xs text-slate-500 mt-2">Loading Assets...</p>
         </div>
     </div>
 
     <div id="app" class="hidden max-w-6xl mx-auto p-4 md:p-8">
-        
         <header class="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
             <div class="flex items-center gap-4">
-                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold shadow-lg" id="client-avatar">?</div>
+                <div class="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-2xl font-bold" id="client-avatar">?</div>
                 <div>
-                    <h1 class="text-2xl font-extrabold" id="header-name">Welcome Back</h1>
-                    <p class="text-slate-400 text-sm" id="header-location"><i class="fa-solid fa-location-dot"></i> Your Editing Studio</p>
+                    <h1 class="text-2xl font-extrabold" id="header-name">Welcome</h1>
+                    <p class="text-slate-400 text-sm italic">Gen-Z Gravity Exclusive Client</p>
                 </div>
             </div>
             <div class="flex gap-3">
-                <button onclick="openModal('newProjectModal')" class="glass px-6 py-3 rounded-2xl text-sm font-bold border-indigo-500/30 text-indigo-400"><i class="fa-solid fa-plus"></i> New Project</button>
-                <button onclick="window.open('https://meet.google.com/new')" class="bg-indigo-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20"><i class="fa-solid fa-video"></i> Meet</button>
+                <button onclick="downloadPDFInvoice()" id="inv-dl-btn" class="hidden glass px-6 py-3 rounded-2xl text-sm font-bold text-amber-400 border-amber-500/30 hover:bg-amber-500/10 transition"><i class="fa-solid fa-file-pdf"></i> Save Invoice</button>
+                <button onclick="window.open('https://meet.google.com/new')" class="bg-indigo-600 px-6 py-3 rounded-2xl text-sm font-bold shadow-lg shadow-indigo-500/20 hover:scale-105 transition"><i class="fa-solid fa-video"></i> Meet</button>
             </div>
         </header>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <div class="glass p-6 rounded-3xl text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Total Edits</p>
-                <h3 class="text-2xl font-black mt-1" id="stat-total">1</h3>
-            </div>
-            <div class="glass p-6 rounded-3xl text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Pending Pay</p>
-                <h3 class="text-2xl font-black mt-1 text-red-400" id="stat-pending">₹0</h3>
-            </div>
-            <div class="glass p-6 rounded-3xl text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Reward Points</p>
-                <h3 class="text-2xl font-black mt-1 text-amber-400">120</h3>
-            </div>
-            <div class="glass p-6 rounded-3xl text-center">
-                <p class="text-slate-500 text-[10px] font-bold uppercase">Level</p>
-                <h3 class="text-2xl font-black mt-1 text-indigo-400">PRO</h3>
-            </div>
-        </div>
-
         <section class="mb-12">
-            <h2 class="text-xl font-black mb-6 flex items-center gap-2"><i class="fa-solid fa-play-circle text-indigo-500"></i> LATEST PREVIEW</h2>
-            <div class="glass p-6 md:p-10 rounded-[3rem] overflow-hidden shadow-2xl border-white/5">
-                <div class="aspect-video bg-black rounded-3xl mb-8 border border-white/5 overflow-hidden">
-                    <video id="main-player" controls class="w-full h-full"></video>
+            <div class="glass p-6 md:p-10 rounded-[3rem] shadow-2xl">
+                <div class="aspect-video bg-black rounded-3xl mb-8 border border-white/5 overflow-hidden shadow-inner relative group">
+                    <video id="main-player" controls class="w-full h-full object-cover"></video>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
-                        <h3 class="text-2xl font-bold" id="main-title">Project Title</h3>
-                        <p class="text-slate-400 text-sm mb-4" id="main-desc">Review the latest edit and drop feedback below.</p>
+                        <h3 class="text-2xl font-bold" id="main-title">Project Name</h3>
+                        <p class="text-slate-400 text-sm mb-6">Review the latest 4K edit below.</p>
                         
-                        <div id="payment-card" class="hidden bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-2xl text-center">
-                            <p class="text-xs uppercase font-black text-indigo-400 mb-4">Complete Payment to Unlock Final</p>
-                            <img id="qr-display" src="" class="w-40 mx-auto rounded-xl bg-white p-2 mb-4">
-                            <h4 class="text-2xl font-black" id="price-display">₹0</h4>
+                        <div id="payment-card" class="bg-indigo-600/10 border border-indigo-500/20 p-6 rounded-3xl text-center">
+                            <p class="text-[10px] uppercase font-black text-indigo-400 mb-4 tracking-widest">Locked: Pending Payment</p>
+                            <img id="qr-display" src="" class="w-48 mx-auto rounded-2xl bg-white p-2 mb-4 shadow-xl">
+                            <h4 class="text-3xl font-black" id="price-display">₹0</h4>
+                            <p class="text-xs text-slate-500 mt-2">Scan to Pay via UPI</p>
                         </div>
-
-                        <div id="unlocked-actions" class="hidden space-y-3">
-                            <a id="download-btn" href="#" target="_blank" class="block w-full bg-green-600 py-4 rounded-2xl font-black text-center text-lg shadow-xl shadow-green-600/20">🚀 DOWNLOAD 4K FINAL</a>
-                            <button onclick="downloadInvoicePDF()" class="w-full bg-slate-800 border border-white/10 py-3 rounded-2xl font-bold text-sm hover:bg-slate-700 transition">
-                                <i class="fa-solid fa-file-pdf mr-2"></i> Download Invoice
-                            </button>
-                        </div>
+                        
+                        <a id="download-btn" href="#" class="hidden block w-full bg-green-600 py-5 rounded-[2rem] font-black text-center text-xl shadow-2xl shadow-green-600/30 animate-bounce hover:bg-green-500 transition">
+                            <i class="fa-solid fa-cloud-arrow-down mr-2"></i> DOWNLOAD FINAL 4K
+                        </a>
                     </div>
                     
                     <div class="flex flex-col gap-4">
-                        <h4 class="text-xs font-bold text-slate-500 uppercase">Drop Timeline Feedback</h4>
-                        <textarea id="feedback-note" placeholder="At 0:45, please change the color grading..." class="bg-slate-900 border border-white/5 p-4 rounded-2xl h-32 outline-none focus:border-indigo-500 text-white"></textarea>
-                        <button onclick="sendFeedback()" class="bg-slate-800 py-4 rounded-2xl font-bold hover:bg-slate-700 transition">Post Revision Note</button>
+                        <h4 class="text-xs font-bold text-slate-500 uppercase">Revision Notes</h4>
+                        <textarea id="feedback-note" placeholder="Example: At 1:20 change the transition..." class="bg-slate-900 border border-white/5 p-5 rounded-3xl h-32 outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                        <button onclick="sendFeedback()" class="bg-slate-800 py-4 rounded-2xl font-bold hover:bg-slate-700 transition"><i class="fa-brands fa-whatsapp mr-2"></i> Send Feedback</button>
                     </div>
                 </div>
             </div>
         </section>
-
-        <section>
-            <h2 class="text-xl font-black mb-6">PROJECT HISTORY</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="history-grid"></div>
-        </section>
     </div>
 
-    <div id="newProjectModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[110] p-6">
-        <div class="glass p-8 rounded-[3rem] w-full max-w-xl">
-            <h2 class="text-2xl font-black mb-6 italic tracking-tighter text-indigo-400">START NEW PROJECT</h2>
-            <div class="space-y-4">
-                <input type="text" id="np-title" placeholder="Project Name (e.g. Travel Vlog)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 text-white">
-                <input type="text" id="np-raw" placeholder="Raw Footage Link (G-Drive)" class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 text-white">
-                <textarea id="np-notes" placeholder="Video requirements & Style..." class="w-full bg-slate-900 p-4 rounded-2xl border border-white/5 h-24 text-white"></textarea>
-                <div class="flex gap-4">
-                    <button onclick="closeModal('newProjectModal')" class="flex-1 bg-slate-800 py-4 rounded-2xl font-bold">Cancel</button>
-                    <button onclick="requestProject()" class="flex-1 bg-indigo-600 py-4 rounded-2xl font-bold">Submit Raw Link</button>
+    <div id="invoice-container">
+        <div id="invoice-template">
+            <div style="display:flex; justify-content:space-between; border-bottom:4px solid #6366f1; padding-bottom:20px; margin-bottom:30px">
+                <div>
+                    <h1 style="margin:0; font-size:28px; font-weight:900; font-style:italic">GEN-Z GRAVITY<span style="color:#6366f1">.CO</span></h1>
+                    <p style="color:#666; margin-top:5px; font-size:12px">Professional Video Editing & Motion Graphics</p>
                 </div>
+                <div style="text-align:right">
+                    <h2 style="margin:0; color:#6366f1; font-size:24px">INVOICE</h2>
+                    <p id="inv-date" style="color:#333; font-weight:bold; margin-top:5px"></p>
+                    <p style="color:#999; font-size:10px">ID: <span id="inv-id"></span></p>
+                </div>
+            </div>
+            
+            <div style="margin-bottom:40px; display:flex; justify-content:space-between;">
+                <div>
+                    <p style="font-size:10px; color:#999; text-transform:uppercase; font-weight:bold">Billed To</p>
+                    <h3 id="inv-client-name" style="margin:5px 0 0 0; font-size:18px"></h3>
+                </div>
+                <div style="text-align:right">
+                     <p style="font-size:10px; color:#999; text-transform:uppercase; font-weight:bold">Project</p>
+                     <h3 id="inv-project-title" style="margin:5px 0 0 0; font-size:18px"></h3>
+                </div>
+            </div>
+
+            <table style="width:100%; border-collapse:collapse; margin-bottom:40px">
+                <thead>
+                    <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0">
+                        <th style="padding:15px; text-align:left; font-size:12px; color:#64748b">DESCRIPTION</th>
+                        <th style="padding:15px; text-align:right; font-size:12px; color:#64748b">AMOUNT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:15px; border-bottom:1px solid #f1f5f9; font-weight:600">Video Editing Services (4K Delivery)</td>
+                        <td style="padding:15px; border-bottom:1px solid #f1f5f9; text-align:right" id="inv-base-price"></td>
+                    </tr>
+                    <tr>
+                        <td style="padding:15px; border-bottom:1px solid #f1f5f9; font-weight:600">Color Grading & Sound Design</td>
+                        <td style="padding:15px; border-bottom:1px solid #f1f5f9; text-align:right">Included</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:15px; text-align:right; font-weight:bold">GST (18%)</td>
+                        <td style="padding:15px; text-align:right; font-weight:bold" id="inv-gst"></td>
+                    </tr>
+                    <tr style="background:#0f172a; color:white">
+                        <td style="padding:15px; text-align:right; font-weight:800">TOTAL PAID</td>
+                        <td style="padding:15px; text-align:right; font-weight:800; color:#4ade80" id="inv-total"></td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <div style="text-align:center; margin-top:60px">
+                <p style="font-size:10px; color:#cbd5e1; margin-bottom:10px">Thank you for your business!</p>
+                <div style="height:4px; width:100px; background:#6366f1; margin:0 auto; border-radius:2px"></div>
             </div>
         </div>
     </div>
 
     <script>
+        // --- 1. CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyClH2MyqJG0qkuOT5LokfxdYlLY8guW79Q",
             authDomain: "videodelivery-1.firebaseapp.com",
@@ -178,106 +151,119 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-
         const clientId = new URLSearchParams(window.location.search).get('id');
         let clientData = null;
 
+        // --- 2. DRIVE LINK FIXER ---
+        // This makes sure your Google Drive links actually play/show
+        function convertDriveLink(url) {
+            if (!url) return "";
+            // Extract ID from standard drive link
+            const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                return `https://drive.google.com/uc?export=view&id=${idMatch[1]}`;
+            }
+            return url; // Return original if it's already correct
+        }
+        
+        // For Download buttons, we often want 'export=download'
+        function convertDownloadLink(url) {
+             if (!url) return "";
+            const idMatch = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (idMatch && idMatch[1]) {
+                return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
+            }
+            return url;
+        }
+
+        // --- 3. MAIN LOGIC ---
         if (clientId) {
+            // Track views
+            if(!sessionStorage.getItem('viewed_' + clientId)) {
+                db.ref('projects/' + clientId + '/viewCount').transaction(c => (c || 0) + 1);
+                sessionStorage.setItem('viewed_' + clientId, 'true');
+            }
+
             db.ref('projects/' + clientId).on('value', snap => {
                 clientData = snap.val();
                 if (clientData) {
                     renderUI(clientData);
                     document.getElementById('loader').classList.add('hidden');
                     document.getElementById('app').classList.remove('hidden');
+                } else {
+                    document.getElementById('loader').innerHTML = "<h2 class='text-red-500'>Project Not Found</h2>";
                 }
             });
+        } else {
+             document.getElementById('loader').innerHTML = "<h2 class='text-white'>No Project ID Provided</h2>";
         }
 
         function renderUI(data) {
             document.getElementById('header-name').innerText = `Hello, ${data.cn}`;
             document.getElementById('client-avatar').innerText = data.cn.charAt(0);
             document.getElementById('main-title').innerText = data.t;
-            document.getElementById('main-player').src = data.v;
-            document.getElementById('price-display').innerText = `₹${data.p}`;
-            document.getElementById('qr-display').src = data.q;
             
-            // Tracking Seen
-            db.ref('projects/' + clientId).update({ lastSeen: new Date().toLocaleTimeString() });
-
-            // Payment & Unlocked Logic
+            // USE THE FIXER HERE
+            document.getElementById('main-player').src = convertDriveLink(data.v);
+            document.getElementById('qr-display').src = convertDriveLink(data.q);
+            
+            document.getElementById('price-display').innerText = `₹${data.p}`;
+            
             if (data.paid) {
+                // Unlock Interface
                 document.getElementById('payment-card').classList.add('hidden');
-                document.getElementById('unlocked-actions').classList.remove('hidden');
-                document.getElementById('download-btn').href = data.f;
-                document.getElementById('stat-pending').innerText = "₹0";
-                document.getElementById('stat-pending').style.color = "#4ade80";
+                const dlBtn = document.getElementById('download-btn');
+                dlBtn.classList.remove('hidden');
+                dlBtn.href = convertDownloadLink(data.f); // Direct download
                 
-                // Set Invoice Data
+                document.getElementById('inv-dl-btn').classList.remove('hidden');
+                
+                // Populate Invoice Data NOW (so it's ready for PDF)
                 document.getElementById('inv-client-name').innerText = data.cn;
-                document.getElementById('inv-client-id').innerText = "ID: " + clientId;
                 document.getElementById('inv-project-title').innerText = data.t;
-                document.getElementById('inv-price').innerText = `₹${data.p}`;
-                document.getElementById('inv-subtotal').innerText = `₹${data.p}`;
-                document.getElementById('inv-total').innerText = `₹${data.p}`;
-                document.getElementById('inv-date').innerText = "Date: " + new Date().toLocaleDateString();
-            } else {
-                document.getElementById('payment-card').classList.remove('hidden');
-                document.getElementById('unlocked-actions').classList.add('hidden');
-                document.getElementById('stat-pending').innerText = `₹${data.p}`;
-            }
+                document.getElementById('inv-base-price').innerText = `₹${data.p}`;
+                document.getElementById('inv-gst').innerText = `₹${Math.round(data.p * 0.18)}`;
+                document.getElementById('inv-total').innerText = `₹${Math.round(data.p * 1.18)}`;
+                document.getElementById('inv-date').innerText = new Date().toLocaleDateString();
+                document.getElementById('inv-id').innerText = clientId.toUpperCase();
 
-            // Render History
-            const history = document.getElementById('history-grid');
-            history.innerHTML = `
-                <div class="glass p-5 rounded-3xl flex items-center justify-between border border-white/5">
-                    <div>
-                        <p class="font-bold text-white">${data.t}</p>
-                        <p class="text-[10px] text-slate-500 uppercase tracking-widest">${new Date().toLocaleDateString()}</p>
-                    </div>
-                    <span class="status-badge ${data.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-400'}">
-                        ${data.paid ? 'Completed' : 'Payment Pending'}
-                    </span>
-                </div>
-            `;
+                // Celebrate
+                triggerConfetti();
+            }
         }
 
-        function downloadInvoicePDF() {
+        function downloadPDFInvoice() {
             const element = document.getElementById('invoice-template');
-            const options = {
+            const opt = {
                 margin: 0,
-                filename: `Invoice_${clientData.t}.pdf`,
+                filename: `Invoice_${clientData.cn}_GenZGravity.pdf`,
                 image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+                html2canvas: { scale: 2, useCORS: true }, // useCORS helps with images
+                jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' }
             };
-            html2pdf().set(options).from(element).save();
+            // Temporarily show it if needed by library, but offscreen method usually works
+            html2pdf().set(opt).from(element).save();
         }
 
         function sendFeedback() {
             const note = document.getElementById('feedback-note').value;
-            const msg = `🔥 *Revision Request from ${clientData.cn}*\nProject: ${clientData.t}\nNote: ${note}`;
-            window.open(`https://wa.me/918866653002?text=${encodeURIComponent(msg)}`);
+            // Replace with YOUR number
+            const myNumber = "919876543210"; 
+            const msg = `🔥 *Revision Request*\n\nClient: ${clientData.cn}\nProject: ${clientData.t}\nFeedback: ${note}`;
+            window.open(`https://wa.me/${myNumber}?text=${encodeURIComponent(msg)}`);
         }
 
-        function requestProject() {
-            const title = document.getElementById('np-title').value;
-            const link = document.getElementById('np-raw').value;
-            const msg = `🚀 *New Project Request*\nClient ID: ${clientId}\nTitle: ${title}\nRaw Video: ${link}`;
-            window.open(`https://wa.me/918866653002?text=${encodeURIComponent(msg)}`);
-            closeModal('newProjectModal');
+        function triggerConfetti() {
+            var duration = 3 * 1000;
+            var animationEnd = Date.now() + duration;
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) { return clearInterval(interval); }
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: Math.random(), y: Math.random() - 0.2 } }));
+            }, 250);
         }
-
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-        
-        // Celebrate Unlock
-        let unlockPlayed = false;
-        db.ref('projects/' + clientId + '/paid').on('value', p => {
-            if(p.val() === true && !unlockPlayed) {
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#6366f1', '#a855f7'] });
-                unlockPlayed = true;
-            }
-        });
     </script>
 </body>
 </html>
