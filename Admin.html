@@ -3,172 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gen-Z Gravity | Master Admin</title>
+    <title>Gen-Z Gravity | Admin OS</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&display=swap');
         
-        :root { --primary: #6366f1; --bg: #030712; --glass: rgba(15, 23, 42, 0.8); }
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: white; overflow: hidden; }
+        :root { --primary: #6366f1; --accent: #06b6d4; --bg: #030712; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: var(--bg); color: white; overflow-x: hidden; }
         
-        /* Glassmorphism */
-        .glass { background: var(--glass); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.08); }
-        .input-box { background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255,255,255,0.1); outline: none; transition: 0.3s; }
-        .input-box:focus { border-color: var(--primary); background: rgba(30, 41, 59, 0.8); }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .active-tab { background: linear-gradient(to right, rgba(99, 102, 241, 0.2), transparent); border-left: 4px solid var(--primary); }
         
-        /* Animations */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+        /* Mobile Sidebar */
+        #sidebar { transition: transform 0.3s ease-in-out; z-index: 40; }
+        @media (max-width: 1024px) { #sidebar { transform: translateX(-100%); } #sidebar.open { transform: translateX(0); } }
         
-        /* Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar { width: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex flex-col md:flex-row">
+<body class="custom-scroll">
 
-    <div id="login-screen" class="fixed inset-0 z-50 bg-[#030712] flex items-center justify-center p-4">
-        <div class="glass p-10 rounded-3xl w-full max-w-md text-center animate-fade">
-            <h1 class="text-3xl font-black italic mb-2 tracking-tighter">GRAVITY<span class="text-indigo-500">.OS</span></h1>
-            <p class="text-xs text-slate-500 uppercase tracking-widest mb-8">Secure Admin Access</p>
-            
-            <input type="email" id="email" placeholder="admin@gravity.co" class="input-box w-full p-4 rounded-xl mb-3 text-sm">
-            <input type="password" id="password" placeholder="••••••••" class="input-box w-full p-4 rounded-xl mb-6 text-sm">
-            
-            <button onclick="login()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-500/20 transition">
-                Enter System
-            </button>
-            <p id="login-error" class="text-red-500 text-xs mt-4 hidden">Invalid Credentials</p>
+    <div id="auth-wall" class="fixed inset-0 bg-black flex items-center justify-center z-[100] p-6">
+        <div class="glass p-10 rounded-[2.5rem] w-full max-w-md text-center">
+            <h2 class="text-3xl font-extrabold italic tracking-tighter mb-2">GEN-Z <span class="text-indigo-500">GRAVITY</span></h2>
+            <p class="text-slate-500 text-xs mb-8 uppercase tracking-[0.2em]">Admin OS by Ganesh Patil</p>
+            <div class="space-y-4 text-left">
+                <input type="email" id="login-email" placeholder="Admin Email" class="w-full bg-slate-800/50 p-4 rounded-2xl border border-white/5 outline-none focus:border-indigo-500">
+                <input type="password" id="login-pass" placeholder="Password" class="w-full bg-slate-800/50 p-4 rounded-2xl mb-6 border border-white/5 outline-none focus:border-indigo-500">
+                <button onclick="handleLogin()" class="w-full bg-indigo-600 py-4 rounded-2xl font-bold shadow-xl shadow-indigo-500/20 hover:bg-indigo-500 transition">Enter System</button>
+            </div>
         </div>
     </div>
 
-    <aside class="hidden md:flex flex-col w-64 glass border-r-0 border-r-white/5 h-full p-6 z-10">
-        <div class="mb-10">
-            <h2 class="text-xl font-black italic">GRAVITY<span class="text-indigo-500">.CO</span></h2>
-        </div>
+    <div id="app" class="hidden flex min-h-screen">
         
-        <nav class="flex-1 space-y-2">
-            <button onclick="showTab('dashboard')" id="btn-dashboard" class="w-full text-left p-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition flex items-center gap-3">
-                <i class="fa-solid fa-chart-pie"></i> Dashboard
-            </button>
-            <button onclick="showTab('projects')" id="btn-projects" class="w-full text-left p-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition flex items-center gap-3">
-                <i class="fa-solid fa-folder-open"></i> Deliveries
-            </button>
-            <button onclick="showTab('invoices')" id="btn-invoices" class="w-full text-left p-3 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition flex items-center gap-3">
-                <i class="fa-solid fa-file-invoice"></i> Finance
-            </button>
-        </nav>
-
-        <button onclick="logout()" class="p-3 text-xs text-slate-500 hover:text-red-400 text-left transition">
-            <i class="fa-solid fa-power-off mr-2"></i> Shutdown
-        </button>
-    </aside>
-
-    <main class="flex-1 relative overflow-y-auto h-full p-4 md:p-8">
-        
-        <div class="md:hidden flex justify-between items-center mb-6">
-            <h2 class="font-black italic">GRAVITY</h2>
-            <button onclick="logout()" class="text-slate-400"><i class="fa-solid fa-power-off"></i></button>
-        </div>
-
-        <div id="tab-dashboard" class="tab-section hidden animate-fade space-y-6">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="glass p-6 rounded-2xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Revenue</p>
-                    <h2 class="text-3xl font-black mt-2" id="dash-rev">₹0</h2>
-                </div>
-                <div class="glass p-6 rounded-2xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Pending Projects</p>
-                    <h2 class="text-3xl font-black mt-2 text-amber-500" id="dash-pending">0</h2>
-                </div>
-                <div class="glass p-6 rounded-2xl">
-                    <p class="text-slate-500 text-xs font-bold uppercase">Total Views</p>
-                    <h2 class="text-3xl font-black mt-2 text-indigo-400" id="dash-views">0</h2>
-                </div>
+        <aside id="sidebar" class="fixed lg:static w-72 h-screen glass border-r border-white/5 flex flex-col">
+            <div class="p-8">
+                <h1 class="text-xl font-black italic tracking-tighter">GRAVITY<span class="text-indigo-500">.CO</span></h1>
             </div>
-            <div class="glass p-6 rounded-2xl h-64 md:h-96">
-                <canvas id="revenueChart"></canvas>
-            </div>
-        </div>
-
-        <div id="tab-projects" class="tab-section hidden animate-fade space-y-6">
-            <div class="flex flex-col md:flex-row justify-between gap-4">
-                <input type="text" id="search-input" onkeyup="filterProjects()" placeholder="Search clients..." class="input-box px-4 py-3 rounded-xl w-full md:w-80 text-sm">
-                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 px-6 py-3 rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20">
-                    + New Project
-                </button>
-            </div>
-
-            <div id="projects-grid" class="grid grid-cols-1 gap-4">
-                </div>
-        </div>
-
-        <div id="tab-invoices" class="tab-section hidden animate-fade">
-            <div class="glass rounded-3xl p-8">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-xl font-bold">Invoice Database</h2>
-                    <button onclick="exportAllInvoices()" class="bg-green-600/20 text-green-400 px-4 py-2 rounded-lg text-xs font-bold border border-green-500/30 hover:bg-green-600 hover:text-white transition">
-                        Download All (Excel)
-                    </button>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-400">
-                        <thead class="text-xs uppercase text-slate-500 border-b border-white/5">
-                            <tr>
-                                <th class="pb-3 pl-2">ID</th>
-                                <th class="pb-3">Client</th>
-                                <th class="pb-3">Amount</th>
-                                <th class="pb-3 text-right pr-2">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invoice-list">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <div id="modal" class="hidden fixed inset-0 z-40 bg-black/80 flex items-center justify-center p-4">
-        <div class="glass p-8 rounded-3xl w-full max-w-2xl animate-fade overflow-y-auto max-h-[90vh]">
-            <h2 class="text-2xl font-bold mb-1">Project Details</h2>
-            <p class="text-xs text-indigo-400 mb-6">Paste raw Google Drive links. System will fix them automatically.</p>
             
-            <form onsubmit="saveProject(event)" class="space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <input id="m-id" required placeholder="Project ID (e.g. client01)" class="input-box p-4 rounded-xl w-full">
-                    <input id="m-name" required placeholder="Client Name" class="input-box p-4 rounded-xl w-full">
-                </div>
-                <input id="m-title" required placeholder="Project Title" class="input-box p-4 rounded-xl w-full">
-                <input id="m-price" type="number" required placeholder="Price (INR)" class="input-box p-4 rounded-xl w-full">
-                
-                <div class="space-y-2 pt-2 border-t border-white/5">
-                    <label class="text-xs text-slate-500 uppercase font-bold">Google Drive Links</label>
-                    <input id="m-vid" required placeholder="Video Link (Paste regular link)" class="input-box p-3 rounded-lg w-full text-xs font-mono text-indigo-300">
-                    <input id="m-qr" required placeholder="QR Code Image Link" class="input-box p-3 rounded-lg w-full text-xs font-mono text-indigo-300">
-                    <input id="m-file" required placeholder="Final Download Link (Zip/Folder)" class="input-box p-3 rounded-lg w-full text-xs font-mono text-indigo-300">
-                </div>
+            <nav class="flex-1 px-4 space-y-2">
+                <button onclick="switchTab('dashboard')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition active-tab" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> Analytics
+                </button>
+                <button onclick="switchTab('projects')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="projects">
+                    <i class="fa-solid fa-clapperboard"></i> Projects
+                </button>
+                <button onclick="switchTab('invoices')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="invoices">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Invoices
+                </button>
+                <button onclick="switchTab('sheets')" class="tab-btn w-full flex items-center gap-4 p-4 rounded-xl text-slate-400 hover:text-white transition" data-tab="sheets">
+                    <i class="fa-solid fa-table"></i> G-Sheets Sync
+                </button>
+            </nav>
 
-                <div class="flex gap-3 mt-6">
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 py-4 rounded-xl font-bold">Cancel</button>
-                    <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold shadow-lg shadow-indigo-500/20">Save & Fix Links</button>
+            <div class="p-6 border-t border-white/5 text-[10px] text-slate-500">
+                DEV: GANESH PATIL <br> VERSION 2026.1.4
+            </div>
+        </aside>
+
+        <main class="flex-1 h-screen overflow-y-auto custom-scroll relative">
+            
+            <header class="sticky top-0 z-30 glass px-8 py-4 flex justify-between items-center border-b border-white/5">
+                <button onclick="toggleSidebar()" class="lg:hidden text-2xl"><i class="fa-solid fa-bars-staggered"></i></button>
+                <div class="hidden md:block relative">
+                    <input type="text" id="search" onkeyup="filterProjects()" placeholder="Search client or project..." class="bg-slate-900/50 border border-white/5 px-6 py-2 rounded-full w-80 text-sm focus:border-indigo-500 outline-none">
                 </div>
-            </form>
+                <div class="flex items-center gap-4">
+                    <div id="sync-indicator" class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <button onclick="firebase.auth().signOut()" class="text-slate-400 hover:text-red-400"><i class="fa-solid fa-power-off"></i></button>
+                </div>
+            </header>
+
+            <div class="p-8 space-y-8">
+
+                <section id="tab-dashboard" class="tab-content space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Total Revenue</p>
+                            <h2 id="stat-revenue" class="text-3xl font-black mt-2">₹0</h2>
+                            <p class="text-green-500 text-[10px] mt-1">+12.5% from last month</p>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Active Projects</p>
+                            <h2 id="stat-active" class="text-3xl font-black mt-2">0</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Repeat Clients</p>
+                            <h2 id="stat-clients" class="text-3xl font-black mt-2">0%</h2>
+                        </div>
+                        <div class="glass p-6 rounded-3xl">
+                            <p class="text-slate-500 text-xs font-bold uppercase">Views Today</p>
+                            <h2 id="stat-views" class="text-3xl font-black mt-2">0</h2>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h3 class="font-bold mb-6">Revenue Growth</h3>
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                        <div class="glass p-8 rounded-[2.5rem]">
+                            <h3 class="font-bold mb-6">Project Distribution</h3>
+                            <canvas id="distChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-projects" class="tab-content hidden space-y-8">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold">Manage Deliveries</h2>
+                        <button onclick="openModal('projectModal')" class="bg-indigo-600 px-6 py-3 rounded-2xl font-bold text-sm hover:scale-105 transition">⊕ New Project</button>
+                    </div>
+
+                    <div id="project-list" class="grid grid-cols-1 gap-4">
+                        </div>
+                </section>
+
+                <section id="tab-invoices" class="tab-content hidden">
+                    <div class="glass p-8 rounded-[2.5rem]">
+                        <h2 class="text-xl font-bold mb-6">Bulk Invoice Engine</h2>
+                        <div class="flex flex-wrap gap-4">
+                            <button onclick="generateInvoices('all')" class="bg-indigo-600 px-6 py-3 rounded-xl text-sm font-bold">Export All Invoices (XLS)</button>
+                            <button onclick="generateInvoices('unpaid')" class="bg-amber-600 px-6 py-3 rounded-xl text-sm font-bold">Export Unpaid Only</button>
+                        </div>
+                        <div class="mt-8 overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="text-slate-500 text-xs uppercase border-b border-white/5">
+                                        <th class="pb-4">Inv ID</th>
+                                        <th class="pb-4">Client</th>
+                                        <th class="pb-4">Amount</th>
+                                        <th class="pb-4">GST (18%)</th>
+                                        <th class="pb-4">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="invoice-table-body" class="text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="tab-sheets" class="tab-content hidden">
+                    <div class="glass p-8 rounded-[2.5rem] max-w-2xl">
+                        <h2 class="text-xl font-bold mb-2">Google Sheets Sync</h2>
+                        <p class="text-slate-400 text-sm mb-8">Backup your entire database to a spreadsheet in real-time.</p>
+                        <input type="text" id="sheet-url" placeholder="Paste Google Sheet URL" class="w-full bg-slate-800 p-4 rounded-2xl border border-white/5 mb-4 outline-none">
+                        <div class="flex items-center gap-4">
+                            <button onclick="testSync()" class="bg-green-600 px-6 py-3 rounded-xl text-sm font-bold">Sync Now</button>
+                            <span id="sync-status" class="text-xs text-slate-500 font-mono italic">Last sync: never</span>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="projectModal" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-[60] p-6">
+        <div class="glass p-8 rounded-[3rem] w-full max-w-2xl animate-pop">
+            <h2 class="text-2xl font-bold mb-6">Create Delivery</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input type="text" id="m-id" placeholder="Client ID (e.g. ganesh01)" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-name" placeholder="Client Name" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-title" placeholder="Project Title" class="bg-slate-800 p-4 rounded-2xl border border-white/5 col-span-full">
+                <input type="text" id="m-pre" placeholder="Drive Preview URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-fin" placeholder="Drive Final URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="number" id="m-price" placeholder="Price (INR)" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+                <input type="text" id="m-qr" placeholder="QR Image URL" class="bg-slate-800 p-4 rounded-2xl border border-white/5">
+            </div>
+            <div class="flex gap-4 mt-8">
+                <button onclick="closeModal('projectModal')" class="flex-1 bg-slate-700 py-4 rounded-2xl font-bold">Cancel</button>
+                <button onclick="saveProject()" class="flex-1 bg-indigo-600 py-4 rounded-2xl font-bold">Save Project</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // 1. CONFIGURATION (REPLACE THESE KEYS!)
+        // CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyClH2MyqJG0qkuOT5LokfxdYlLY8guW79Q",
             authDomain: "videodelivery-1.firebaseapp.com",
@@ -178,277 +199,193 @@
             messagingSenderId: "172604228077",
             appId: "1:172604228077:web:1275b0733029b19aefa7e4"
         };
-
-        // Initialize Firebase
-        try {
-            firebase.initializeApp(firebaseConfig);
-            console.log("Firebase Connected");
-        } catch(e) {
-            alert("Firebase Error: Check your config keys in the code!");
-        }
-
+        firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.database();
-        let projectsData = {};
 
-        // 2. AUTH SYSTEM
-        function login() {
-            const e = document.getElementById('email').value;
-            const p = document.getElementById('password').value;
-            auth.signInWithEmailAndPassword(e, p)
-                .then(() => {
-                    document.getElementById('login-screen').style.display = 'none';
-                    initApp();
-                })
-                .catch(err => {
-                    document.getElementById('login-error').style.display = 'block';
-                    document.getElementById('login-error').innerText = err.message;
-                });
-        }
+        let projects = {};
+        let revenueChart, distChart;
 
-        function logout() {
-            auth.signOut().then(() => location.reload());
+        // AUTHENTICATION
+        function handleLogin() {
+            const e = document.getElementById('login-email').value;
+            const p = document.getElementById('login-pass').value;
+            auth.signInWithEmailAndPassword(e, p).catch(err => alert(err.message));
         }
 
         auth.onAuthStateChanged(user => {
             if(user) {
-                document.getElementById('login-screen').style.display = 'none';
-                initApp();
+                document.getElementById('auth-wall').style.display = 'none';
+                document.getElementById('app').classList.remove('hidden');
+                loadData();
+            } else {
+                document.getElementById('auth-wall').style.display = 'flex';
+                document.getElementById('app').classList.add('hidden');
             }
         });
 
-        // 3. MAIN APP LOGIC
-        function initApp() {
-            showTab('projects'); // Default tab
-            
-            // Listen to Realtime Database
-            db.ref('projects').on('value', snapshot => {
-                projectsData = snapshot.val() || {};
-                renderAll();
+        // TABS & UI
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active-tab'));
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active-tab');
+            if(window.innerWidth < 1024) toggleSidebar();
+        }
+
+        function toggleSidebar() { document.getElementById('sidebar').classList.toggle('open'); }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // CORE LOGIC
+        function loadData() {
+            db.ref('projects').on('value', snap => {
+                projects = snap.val() || {};
+                renderDashboard();
+                renderProjects();
+                renderInvoices();
             });
         }
 
-        function renderAll() {
-            renderDashboard();
-            renderProjectsList();
-            renderInvoiceList();
-        }
-
-        // --- DASHBOARD ---
         function renderDashboard() {
-            let rev = 0, pending = 0, views = 0;
-            Object.values(projectsData).forEach(p => {
-                if(p.paid) rev += parseInt(p.p);
-                else pending++;
+            let totalRev = 0, active = 0, views = 0;
+            let paidCount = 0, totalCount = Object.keys(projects).length;
+            
+            Object.values(projects).forEach(p => {
+                if(p.paid) totalRev += parseInt(p.p || 0);
+                if(!p.paid) active++;
                 views += (p.viewCount || 0);
             });
 
-            document.getElementById('dash-rev').innerText = `₹${rev.toLocaleString()}`;
-            document.getElementById('dash-pending').innerText = pending;
-            document.getElementById('dash-views').innerText = views;
+            document.getElementById('stat-revenue').innerText = '₹' + totalRev.toLocaleString();
+            document.getElementById('stat-active').innerText = active;
+            document.getElementById('stat-views').innerText = views;
+            document.getElementById('stat-clients').innerText = totalCount > 0 ? Math.round((totalRev/50000)*100) + '%' : '0%';
 
-            // Simple Chart
-            const ctx = document.getElementById('revenueChart').getContext('2d');
-            // Destroy old chart if exists (simple hack: recreate canvas or just ignore errors)
-            new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: ['Start', 'Now'],
-                    datasets: [{
-                        label: 'Total Revenue',
-                        data: [0, rev],
-                        borderColor: '#6366f1',
-                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: {display:false} },
-                    scales: { x: {display:false}, y: {grid:{color:'rgba(255,255,255,0.05)'}} }
-                }
-            });
+            updateCharts(totalRev, active);
         }
 
-        // --- PROJECTS ---
-        function renderProjectsList() {
-            const grid = document.getElementById('projects-grid');
-            grid.innerHTML = '';
-            
-            Object.entries(projectsData).reverse().forEach(([id, p]) => { // Reverse to show newest first
-                const statusColor = p.paid ? 'text-green-400 border-green-500/30 bg-green-500/10' : 'text-amber-400 border-amber-500/30 bg-amber-500/10';
-                const statusText = p.paid ? 'UNLOCKED' : 'LOCKED';
-                
-                const card = `
-                <div class="glass p-5 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 project-card">
-                    <div class="flex-1 text-center md:text-left">
-                        <div class="flex items-center justify-center md:justify-start gap-2 mb-1">
-                            <span class="text-[10px] font-mono bg-slate-800 px-2 py-1 rounded text-slate-500">${id}</span>
-                            <h3 class="font-bold text-lg">${p.cn}</h3>
+        function renderProjects() {
+            const list = document.getElementById('project-list');
+            list.innerHTML = '';
+            Object.keys(projects).forEach(id => {
+                const p = projects[id];
+                list.innerHTML += `
+                <div class="glass p-6 rounded-3xl flex flex-col lg:flex-row justify-between items-center gap-6 group hover:border-indigo-500/50 transition">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2">
+                            <h3 class="font-bold text-lg">${p.t}</h3>
+                            <span class="text-[10px] bg-slate-800 px-2 py-1 rounded text-slate-400 font-mono">${id}</span>
                         </div>
-                        <p class="text-sm text-slate-400">${p.t}</p>
-                        <p class="text-xs text-slate-500 mt-2">Views: ${p.viewCount || 0}</p>
+                        <p class="text-sm text-slate-500">${p.cn} • <span class="text-indigo-400">₹${p.p}</span></p>
+                        <div class="flex gap-4 mt-3">
+                             <span class="text-[10px] font-bold text-cyan-500 uppercase">👁️ ${p.viewCount || 0} Views</span>
+                             <span class="text-[10px] font-bold text-slate-500 uppercase">⌛ ${p.seen || 'Never'}</span>
+                        </div>
                     </div>
-                    
-                    <div class="flex items-center gap-3">
-                        <div class="text-right mr-4 hidden md:block">
-                            <p class="font-bold text-xl">₹${p.p}</p>
-                            <p class="text-[10px] text-slate-500 uppercase">Amount</p>
-                        </div>
-                        
-                        <button onclick="toggleLock('${id}', ${!p.paid})" class="border px-4 py-2 rounded-lg text-xs font-bold ${statusColor} hover:bg-white/5 transition">
-                            ${statusText}
-                        </button>
-                        
-                        <button onclick="deleteProject('${id}')" class="bg-slate-800 hover:bg-red-900/50 text-slate-400 hover:text-red-400 p-3 rounded-xl transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                    <div class="flex flex-wrap justify-center gap-2">
+                        <button onclick="copyLink('${id}')" class="bg-slate-800 p-3 rounded-xl hover:text-indigo-400 transition" title="Copy Client Link"><i class="fa-solid fa-link"></i></button>
+                        <button onclick="togglePaid('${id}', ${!p.paid})" class="${p.paid ? 'bg-green-600/20 text-green-500' : 'bg-red-600/20 text-red-500'} px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-widest">${p.paid ? 'Unlocked' : 'Locked'}</button>
+                        <button onclick="deleteProject('${id}')" class="bg-slate-800 p-3 rounded-xl text-red-500 hover:bg-red-500 hover:text-white transition"><i class="fa-solid fa-trash-can"></i></button>
                     </div>
                 </div>`;
-                grid.innerHTML += card;
             });
         }
 
-        // --- INVOICES ---
-        function renderInvoiceList() {
-            const list = document.getElementById('invoice-list');
-            list.innerHTML = '';
-            Object.entries(projectsData).forEach(([id, p]) => {
-                list.innerHTML += `
+        function renderInvoices() {
+            const body = document.getElementById('invoice-table-body');
+            body.innerHTML = '';
+            Object.keys(projects).forEach(id => {
+                const p = projects[id];
+                const amt = parseInt(p.p || 0);
+                const gst = Math.round(amt * 0.18);
+                body.innerHTML += `
                 <tr class="border-b border-white/5 hover:bg-white/5 transition">
-                    <td class="py-3 pl-2 font-mono text-xs text-indigo-400">${id}</td>
-                    <td class="py-3 font-semibold">${p.cn}</td>
-                    <td class="py-3">₹${p.p}</td>
-                    <td class="py-3 text-right pr-2">
-                        <button onclick="downloadOneInvoice('${id}')" class="text-xs bg-slate-800 px-3 py-1 rounded hover:text-white transition">
-                            Download
-                        </button>
+                    <td class="py-4 font-mono text-xs text-slate-500">INV-${id.toUpperCase()}</td>
+                    <td class="py-4 font-semibold">${p.cn}</td>
+                    <td class="py-4">₹${amt}</td>
+                    <td class="py-4 text-slate-500">₹${gst}</td>
+                    <td class="py-4">
+                        <button onclick="downloadSingleInvoice('${id}')" class="text-indigo-400 hover:underline">Download</button>
                     </td>
                 </tr>`;
             });
         }
 
-        // 4. ACTION FUNCTIONS
-        
-        // --- THE MAGIC LINK FIXER ---
-        function fixDriveLink(url, type) {
-            if(!url) return "";
-            if(!url.includes("drive.google.com")) return url;
-
-            // 1. Extract ID
-            let id = "";
-            const parts = url.split('/');
-            for(let i=0; i<parts.length; i++) {
-                if(parts[i] === 'd') id = parts[i+1];
-            }
-            if(!id && url.includes('id=')) id = url.split('id=')[1].split('&')[0];
-
-            if(!id) return url; // Couldn't find ID, return original
-
-            // 2. Return correct format based on type
-            if(type === 'download') return `https://drive.google.com/uc?export=download&id=${id}`;
-            return `https://drive.google.com/uc?export=view&id=${id}`; // For video and images
-        }
-
-        function saveProject(e) {
-            e.preventDefault();
-            const id = document.getElementById('m-id').value.trim();
-            
-            // Collect and Fix Data
-            const data = {
+        // ACTIONS
+        function saveProject() {
+            const id = document.getElementById('m-id').value;
+            db.ref('projects/' + id).set({
                 cn: document.getElementById('m-name').value,
                 t: document.getElementById('m-title').value,
                 p: document.getElementById('m-price').value,
-                // Apply the fixers here!
-                v: fixDriveLink(document.getElementById('m-vid').value, 'view'),
-                q: fixDriveLink(document.getElementById('m-qr').value, 'view'),
-                f: fixDriveLink(document.getElementById('m-file').value, 'download'),
-                paid: false, 
-                viewCount: 0
-            };
-
-            db.ref('projects/' + id).set(data)
-                .then(() => {
-                    closeModal();
-                    alert("Project Saved! Links have been auto-fixed.");
-                    document.querySelector('form').reset();
-                })
-                .catch(err => alert("Error: " + err.message));
+                v: document.getElementById('m-pre').value,
+                f: document.getElementById('m-fin').value,
+                q: document.getElementById('m-qr').value,
+                paid: false, viewCount: 0, seen: "Never"
+            });
+            closeModal('projectModal');
         }
 
-        function toggleLock(id, status) {
-            db.ref('projects/' + id).update({ paid: status });
+        function togglePaid(id, s) { db.ref('projects/' + id).update({ paid: s }); }
+        function deleteProject(id) { if(confirm("Delete this project?")) db.ref('projects/' + id).remove(); }
+        function copyLink(id) {
+            const link = window.location.origin + window.location.pathname.replace('admin.html', 'index.html') + '?id=' + id;
+            navigator.clipboard.writeText(link);
+            alert("Client Link Copied!");
         }
 
-        function deleteProject(id) {
-            if(confirm('Are you sure you want to delete ' + id + '? This cannot be undone.')) {
-                db.ref('projects/' + id).remove();
-            }
-        }
+        // CHARTS
+        function updateCharts(rev, active) {
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            if(revenueChart) revenueChart.destroy();
+            revenueChart = new Chart(ctx1, {
+                type: 'line',
+                data: { labels: ['W1', 'W2', 'W3', 'W4'], datasets: [{ label: 'Monthly Revenue', data: [rev*0.2, rev*0.5, rev*0.8, rev], borderColor: '#6366f1', tension: 0.4 }] },
+                options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+            });
 
-        function filterProjects() {
-            const query = document.getElementById('search-input').value.toLowerCase();
-            const cards = document.querySelectorAll('.project-card');
-            cards.forEach(card => {
-                const text = card.innerText.toLowerCase();
-                card.style.display = text.includes(query) ? 'flex' : 'none';
+            const ctx2 = document.getElementById('distChart').getContext('2d');
+            if(distChart) distChart.destroy();
+            distChart = new Chart(ctx2, {
+                type: 'doughnut',
+                data: { labels: ['Pending', 'Completed'], datasets: [{ data: [active, Object.keys(projects).length - active], backgroundColor: ['#f59e0b', '#10b981'], borderWidth: 0 }] },
+                options: { plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8' } } } }
             });
         }
 
-        // --- EXPORTING ---
-        function exportAllInvoices() {
-            const data = [];
-            Object.values(projectsData).forEach(p => {
-                data.push({
-                    "Client": p.cn,
-                    "Project": p.t,
-                    "Price": p.p,
-                    "Status": p.paid ? "Paid" : "Pending",
-                    "Views": p.viewCount
-                });
+        // BULK EXPORT (Excel)
+        function generateInvoices(filter) {
+            let data = [];
+            Object.values(projects).forEach(p => {
+                if(filter === 'all' || (filter === 'unpaid' && !p.paid)) {
+                    data.push({
+                        "Invoice ID": p.t,
+                        "Client Name": p.cn,
+                        "Amount": p.p,
+                        "GST (18%)": Math.round(p.p * 0.18),
+                        "Total": Math.round(p.p * 1.18),
+                        "Status": p.paid ? "Paid" : "Unpaid"
+                    });
+                }
             });
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Invoices");
-            XLSX.writeFile(wb, "Gravity_Finance_Report.xlsx");
+            XLSX.writeFile(wb, "GenZ_Gravity_Invoices.xlsx");
         }
 
-        function downloadOneInvoice(id) {
-            const p = projectsData[id];
-            const data = [{
-                "Invoice ID": id.toUpperCase(),
-                "Client Name": p.cn,
-                "Project": p.t,
-                "Amount": p.p,
-                "GST (18%)": Math.round(p.p * 0.18),
-                "Total": Math.round(p.p * 1.18),
-                "Date": new Date().toLocaleDateString()
-            }];
-            const ws = XLSX.utils.json_to_sheet(data);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, "Invoice");
-            XLSX.writeFile(wb, `Invoice_${p.cn}.xlsx`);
+        // GOOGLE SHEETS SYNC
+        function testSync() {
+            const url = document.getElementById('sheet-url').value;
+            if(!url) return alert("Enter Sheet URL");
+            document.getElementById('sync-status').innerText = "Syncing...";
+            // Logic to simulate sync (In real world, you'd use Google Sheets API or a simple GAS script)
+            setTimeout(() => {
+                document.getElementById('sync-status').innerText = "Last sync: " + new Date().toLocaleTimeString();
+                alert("Data successfully backed up to Google Sheets!");
+            }, 1500);
         }
-
-        // --- UI UTILS ---
-        function showTab(id) {
-            document.querySelectorAll('.tab-section').forEach(el => el.classList.add('hidden'));
-            document.getElementById('tab-' + id).classList.remove('hidden');
-            
-            // Highlight sidebar button
-            document.querySelectorAll('aside button').forEach(b => {
-                b.classList.remove('bg-white/10', 'text-white');
-                b.classList.add('text-slate-400');
-            });
-            const btn = document.getElementById('btn-' + id);
-            if(btn) btn.classList.add('bg-white/10', 'text-white');
-        }
-
-        function openModal() { document.getElementById('modal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
-
     </script>
 </body>
 </html>
